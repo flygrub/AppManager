@@ -1,29 +1,67 @@
 package com.proudfly.appmanager;
 
+import android.app.Activity;
+import android.app.ActivityManager;
+import android.content.Context;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.media.tv.TvContract;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.ListView;
+import android.widget.TextView;
+
+import org.w3c.dom.Text;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
+
+    //单例
+    public static MainActivity singleton;
+
+    private static final String TAG  = "MainActivity";
+
+    //获取列表按钮
+    private Button btn_GetList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        singleton = this;
+
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
+        Init();
+    }
+
+    //初始化
+    private void Init()
+    {
+        btn_GetList = (Button)findViewById(R.id.Btn_GetList);
+        btn_GetList.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+            public void onClick(View v) {
+
+                Log.d("MainActivity", "Get List");
+                List<Programe> list = getRunningProcess();
+                ListAdapter adapter = new ListAdapter(list, getApplicationContext());
+                getListView().setAdapter(adapter);
+
             }
         });
     }
@@ -48,5 +86,53 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    /*
+    * 获取ListView
+    */
+    private ListView getListView()
+    {
+        return (ListView) findViewById(R.id.myArrayList);
+    }
+
+    //正在运行的
+    public List<Programe> getRunningProcess(){
+
+        Log.d(TAG, "getRunningProcess --- start -----");
+
+        PackagesInfo pi = new PackagesInfo(this);
+
+        ActivityManager am = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
+        //获取正在运行的应用
+        List<ActivityManager.RunningAppProcessInfo> run = am.getRunningAppProcesses();
+        //获取包管理器，在这里主要通过包名获取程序的图标和程序名
+        PackageManager pm =this.getPackageManager();
+        List<Programe> list = new ArrayList<Programe>();
+
+        Log.d(TAG, "getRunningProcess --- Start --- For Info -----");
+        for(ActivityManager.RunningAppProcessInfo ra : run){
+            //过滤系统的应用和电话应用
+//            if(ra.processName.equals("system") || ra.processName.equals("com.android.phone")){
+//                continue;
+//            }
+
+
+            ApplicationInfo info =  pi.getInfo(ra.processName);
+            if(info != null) {
+                Programe pr = new Programe();
+                pr.setIcon(info.loadIcon(pm));
+                pr.setName(info.loadLabel(pm).toString());
+                pr.setInfo(info.packageName);
+                list.add(pr);
+                Log.d(TAG, "ApplicationInfo == -----" + info.toString());
+            }
+            else
+            {
+                Log.d(TAG, "ApplicationInfo == ----- null");
+            }
+        }
+        Log.d(TAG, "getRunningProcess --- End -----");
+        return list;
     }
 }
