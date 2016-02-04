@@ -1,5 +1,7 @@
 <resources>
     <string name="app_name">应用管理</string>
     <string name="action_settings">设置</string>
-    <string name="action_getRuningList">正在运行</string>
+    <string name="action_getTirdRuningList">第三方应用</string>
+    <string name="action_getOwnRuningList">系统应用</string>
+    <string name="action_killTirdApp">清理应用</string>
 </resources>

@@ -2,12 +2,14 @@ package com.proudfly.appmanager;
 
 import android.app.Activity;
 import android.app.ActivityManager;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.media.tv.TvContract;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
@@ -23,8 +25,14 @@ import android.widget.TextView;
 
 import org.w3c.dom.Text;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -32,6 +40,11 @@ public class MainActivity extends AppCompatActivity {
     public static MainActivity singleton;
 
     private static final String TAG  = "MainActivity";
+
+    private List<ApplicationInfo> killAppList;
+
+    private ActivityManager am;
+    private PackageManager pm;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,7 +62,10 @@ public class MainActivity extends AppCompatActivity {
     //初始化
     private void init()
     {
-        initListView();
+        am = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
+        //获取包管理器，在这里主要通过包名获取程序的图标和程序名
+        pm =this.getPackageManager();
+        initListView(1);
     }
 
     @Override
@@ -68,11 +84,23 @@ public class MainActivity extends AppCompatActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+            AlertDialog("正在努力开发中！");
             return true;
         }
-        else if (id == R.id.action_getRuningList)
+        else if (id == R.id.action_getTirdRuningList)
         {
-            initListView();
+            initListView(1);
+            return true;
+        }
+        else if (id == R.id.action_getOwnRuningList)
+        {
+            initListView(0);
+            return true;
+        }
+        else if (id == R.id.action_killTirdApp)
+        {
+            killTridApp();
+            return true;
         }
 
         return super.onOptionsItemSelected(item);
@@ -80,9 +108,9 @@ public class MainActivity extends AppCompatActivity {
     /*
      * 获取应用列表
      */
-    private void initListView()
+    private void initListView(int type)
     {
-        List<Programe> list = getRunningProcess();
+        List<Programe> list = getRunningProcess(type);
         ListAdapter adapter = new ListAdapter(list, getApplicationContext());
         getListView().setAdapter(adapter);
     }
@@ -96,34 +124,55 @@ public class MainActivity extends AppCompatActivity {
     }
 
     //正在运行的
-    public List<Programe> getRunningProcess(){
+    public List<Programe> getRunningProcess(int type){
 
         Log.d(TAG, "getRunningProcess --- start -----");
 
         PackagesInfo pi = new PackagesInfo(this);
 
-        ActivityManager am = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
         //获取正在运行的应用
         List<ActivityManager.RunningAppProcessInfo> run = am.getRunningAppProcesses();
-        //获取包管理器，在这里主要通过包名获取程序的图标和程序名
-        PackageManager pm =this.getPackageManager();
         List<Programe> list = new ArrayList<Programe>();
 
         Log.d(TAG, "getRunningProcess --- Start --- For Info -----");
-        for(ActivityManager.RunningAppProcessInfo ra : run){
-            //过滤系统的应用和电话应用
-//            if(ra.processName.equals("system") || ra.processName.equals("com.android.phone")){
-//                continue;
-//            }
 
-
+        for(ActivityManager.RunningAppProcessInfo ra : run)
+        {
             ApplicationInfo info =  pi.getInfo(ra.processName);
-            if(info != null) {
+            if(info != null)
+            {
+                //屏蔽掉自己
+                if(info.packageName.equals(getPackageName()))
+                {
+                    continue;
+                }
+
+                //判断是否为系统预装的应用
+                if (type == 0 && (info.flags & info.FLAG_SYSTEM) <= 0)
+                {
+                    //屏蔽第三方
+                    continue;
+                }
+                if(type == 1 && (info.flags & info.FLAG_SYSTEM) > 0)
+                {
+                    //屏蔽系统应用
+                    continue;
+                }
+
                 Programe pr = new Programe();
                 pr.setIcon(info.loadIcon(pm));
                 pr.setName(info.loadLabel(pm).toString());
                 pr.setInfo(info.packageName);
                 list.add(pr);
+
+                //保存第三方应用列表
+                if(type == 1)
+                {
+                    if (killAppList == null)
+                        killAppList = new ArrayList<ApplicationInfo>();
+                    killAppList.add(info);
+                }
+
                 Log.d(TAG, "ApplicationInfo == -----" + info.toString());
             }
             else
@@ -133,5 +182,51 @@ public class MainActivity extends AppCompatActivity {
         }
         Log.d(TAG, "getRunningProcess --- End -----");
         return list;
+    }
+
+    private void killTridApp()
+    {
+        AlertDialog("正在努力开发中！");
+//        if(killAppList != null)
+//        {
+//            for(ApplicationInfo ai : killAppList)
+//            {
+//                //魅族定制，防止清理联系人应用
+//                if(!ai.packageName.contains("meizu") && ai.packageName.contains(""))
+//                {
+//                    Log.d(TAG, "killTridApp --- " + ai.packageName);
+//                    try
+//                    {
+////                        am.killBackgroundProcesses(ai.packageName);
+////                        forceStopPackage(ai.packageName);
+//                        KillUtil.kill(ai.packageName);
+//                    }
+//                    catch (Exception e)
+//                    {
+//                        e.printStackTrace();
+//                    }
+//
+//
+//                }
+//            }
+//        }
+    }
+
+    /**
+     *强制停止应用程序
+     * @param pkgName
+     */
+    private void forceStopPackage(String pkgName) throws Exception{
+        Method method = Class.forName("android.app.ActivityManager").getMethod("forceStopPackage", String.class);
+        method.invoke(am, pkgName);
+    }
+
+    public void AlertDialog(String m)
+    {
+        new  AlertDialog.Builder(this)
+                .setTitle("提示" )
+                .setMessage(m)
+                .setPositiveButton("确定" ,  null )
+                .show();
     }
 }

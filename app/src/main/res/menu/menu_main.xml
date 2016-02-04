@@ -2,7 +2,11 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools" tools:context=".MainActivity">
     <item android:id="@+id/action_settings" android:title="@string/action_settings"
-        android:orderInCategory="101" app:showAsAction="never" />
-    <item android:id="@+id/action_getRuningList" android:title="@string/action_getRuningList"
+        android:orderInCategory="105" app:showAsAction="never" />
+    <item android:id="@+id/action_getTirdRuningList" android:title="@string/action_getTirdRuningList"
         android:orderInCategory="100" app:showAsAction="never" />
+    <item android:id="@+id/action_getOwnRuningList" android:title="@string/action_getOwnRuningList"
+        android:orderInCategory="101" app:showAsAction="never" />
+    <item android:id="@+id/action_killTirdApp" android:title="@string/action_killTirdApp"
+        android:orderInCategory="102" app:showAsAction="never" />
 </menu>
