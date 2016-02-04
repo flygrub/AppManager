@@ -33,9 +33,6 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String TAG  = "MainActivity";
 
-    //获取列表按钮
-    private Button btn_GetList;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -46,24 +43,13 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        Init();
+        init();
     }
 
     //初始化
-    private void Init()
+    private void init()
     {
-        btn_GetList = (Button)findViewById(R.id.Btn_GetList);
-        btn_GetList.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-                Log.d("MainActivity", "Get List");
-                List<Programe> list = getRunningProcess();
-                ListAdapter adapter = new ListAdapter(list, getApplicationContext());
-                getListView().setAdapter(adapter);
-
-            }
-        });
+        initListView();
     }
 
     @Override
@@ -84,13 +70,26 @@ public class MainActivity extends AppCompatActivity {
         if (id == R.id.action_settings) {
             return true;
         }
+        else if (id == R.id.action_getRuningList)
+        {
+            initListView();
+        }
 
         return super.onOptionsItemSelected(item);
     }
+    /*
+     * 获取应用列表
+     */
+    private void initListView()
+    {
+        List<Programe> list = getRunningProcess();
+        ListAdapter adapter = new ListAdapter(list, getApplicationContext());
+        getListView().setAdapter(adapter);
+    }
 
     /*
-    * 获取ListView
-    */
+     * 获取ListView
+     */
     private ListView getListView()
     {
         return (ListView) findViewById(R.id.myArrayList);

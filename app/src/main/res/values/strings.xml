@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">应用管理</string>
     <string name="action_settings">设置</string>
+    <string name="action_getRuningList">正在运行</string>
 </resources>
