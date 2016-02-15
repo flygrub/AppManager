@@ -22,9 +22,11 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.w3c.dom.Text;
 
+import java.io.DataOutputStream;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -52,6 +54,15 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         singleton = this;
+
+        if(upgradeRootPermission(getPackageCodePath()))
+        {
+            Toast.makeText(MainActivity.this, "已经获取Root权限", Toast.LENGTH_SHORT).show();
+        }
+        else
+        {
+            Toast.makeText(MainActivity.this, "未获取Root权限", Toast.LENGTH_SHORT).show();
+        }
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -186,30 +197,30 @@ public class MainActivity extends AppCompatActivity {
 
     private void killTridApp()
     {
-        AlertDialog("正在努力开发中！");
-//        if(killAppList != null)
-//        {
-//            for(ApplicationInfo ai : killAppList)
-//            {
-//                //魅族定制，防止清理联系人应用
+//        AlertDialog("正在努力开发中！");
+        if(killAppList != null)
+        {
+            for(ApplicationInfo ai : killAppList)
+            {
+                //魅族定制，防止清理联系人应用
 //                if(!ai.packageName.contains("meizu") && ai.packageName.contains(""))
 //                {
-//                    Log.d(TAG, "killTridApp --- " + ai.packageName);
-//                    try
-//                    {
-////                        am.killBackgroundProcesses(ai.packageName);
-////                        forceStopPackage(ai.packageName);
-//                        KillUtil.kill(ai.packageName);
-//                    }
-//                    catch (Exception e)
-//                    {
-//                        e.printStackTrace();
-//                    }
-//
-//
+                    Log.d(TAG, "killTridApp --- " + ai.packageName);
+                    try
+                    {
+//                        am.killBackgroundProcesses(ai.packageName);
+//                        forceStopPackage(ai.packageName);
+                        KillUtil.kill(ai.packageName);
+                    }
+                    catch (Exception e)
+                    {
+                        e.printStackTrace();
+                    }
+
+
 //                }
-//            }
-//        }
+            }
+        }
     }
 
     /**
@@ -219,6 +230,36 @@ public class MainActivity extends AppCompatActivity {
     private void forceStopPackage(String pkgName) throws Exception{
         Method method = Class.forName("android.app.ActivityManager").getMethod("forceStopPackage", String.class);
         method.invoke(am, pkgName);
+    }
+
+    /**
+     * 应用程序运行命令获取 Root权限，设备必须已破解(获得ROOT权限)
+     *
+     * @return 应用程序是/否获取Root权限
+     */
+    public static boolean upgradeRootPermission(String pkgCodePath) {
+        Process process = null;
+        DataOutputStream os = null;
+        try {
+            String cmd="chmod 777 " + pkgCodePath;
+            process = Runtime.getRuntime().exec("su"); //切换到root帐号
+            os = new DataOutputStream(process.getOutputStream());
+            os.writeBytes(cmd + "\n");
+            os.writeBytes("exit\n");
+            os.flush();
+            process.waitFor();
+        } catch (Exception e) {
+            return false;
+        } finally {
+            try {
+                if (os != null) {
+                    os.close();
+                }
+                process.destroy();
+            } catch (Exception e) {
+            }
+        }
+        return true;
     }
 
     public void AlertDialog(String m)
