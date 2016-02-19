@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -18,6 +19,7 @@ import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
@@ -43,10 +45,10 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String TAG  = "MainActivity";
 
-    private List<ApplicationInfo> killAppList;
-
     private ActivityManager am;
     private PackageManager pm;
+
+    private  int nullRuningAppCount = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,7 +69,17 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        AppDataModel.singleton.getIgnoreList();
+
         init();
+    }
+
+    @Override
+    protected void onDestroy()
+    {
+        Log.d(TAG, "onDestory--");
+        AppDataModel.singleton.saveIgnoreList();
+        super.onDestroy();
     }
 
     //初始化
@@ -76,6 +88,9 @@ public class MainActivity extends AppCompatActivity {
         am = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
         //获取包管理器，在这里主要通过包名获取程序的图标和程序名
         pm =this.getPackageManager();
+
+        ListViewControll.singleton = new ListViewControll();
+
         initListView(1);
     }
 
@@ -95,7 +110,7 @@ public class MainActivity extends AppCompatActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
-            AlertDialog("正在努力开发中！");
+            AlertDialog("点击应用列表可以添加应用到白名单。\n注意：本应用只针对第三方应用进行管理！更多功能请联系作者。\n邮箱：flygrub@126.com.");
             return true;
         }
         else if (id == R.id.action_getTirdRuningList)
@@ -103,11 +118,11 @@ public class MainActivity extends AppCompatActivity {
             initListView(1);
             return true;
         }
-        else if (id == R.id.action_getOwnRuningList)
-        {
-            initListView(0);
-            return true;
-        }
+//        else if (id == R.id.action_getOwnRuningList)
+//        {
+//            initListView(0);
+//            return true;
+//        }
         else if (id == R.id.action_killTirdApp)
         {
             killTridApp();
@@ -119,34 +134,29 @@ public class MainActivity extends AppCompatActivity {
     /*
      * 获取应用列表
      */
-    private void initListView(int type)
+    public void initListView(int type)
     {
         List<Programe> list = getRunningProcess(type);
         ListAdapter adapter = new ListAdapter(list, getApplicationContext());
-        getListView().setAdapter(adapter);
-    }
+        ListViewControll.singleton.setAdapter(adapter);
 
-    /*
-     * 获取ListView
-     */
-    private ListView getListView()
-    {
-        return (ListView) findViewById(R.id.myArrayList);
     }
 
     //正在运行的
     public List<Programe> getRunningProcess(int type){
 
         Log.d(TAG, "getRunningProcess --- start -----");
+        AppDataModel.singleton.TrirdAppList.clear();
+        AppDataModel.singleton.SelfAppList.clear();
+        nullRuningAppCount = 0;
 
-        PackagesInfo pi = new PackagesInfo(this);
+        PackagesInfo pi = new PackagesInfo(MainActivity.singleton);
 
         //获取正在运行的应用
         List<ActivityManager.RunningAppProcessInfo> run = am.getRunningAppProcesses();
         List<Programe> list = new ArrayList<Programe>();
 
         Log.d(TAG, "getRunningProcess --- Start --- For Info -----");
-
         for(ActivityManager.RunningAppProcessInfo ra : run)
         {
             ApplicationInfo info =  pi.getInfo(ra.processName);
@@ -159,15 +169,17 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 //判断是否为系统预装的应用
-                if (type == 0 && (info.flags & info.FLAG_SYSTEM) <= 0)
+                if ((info.flags & info.FLAG_SYSTEM) <= 0)
                 {
-                    //屏蔽第三方
-                    continue;
+                    AppDataModel.singleton.TrirdAppList.add(info);
+                    if(type == 0)//屏蔽第三方
+                        continue;
                 }
-                if(type == 1 && (info.flags & info.FLAG_SYSTEM) > 0)
+                if((info.flags & info.FLAG_SYSTEM) > 0)
                 {
-                    //屏蔽系统应用
-                    continue;
+                    AppDataModel.singleton.SelfAppList.add(info);
+                    if(type == 1)//屏蔽系统应用
+                        continue;
                 }
 
                 Programe pr = new Programe();
@@ -176,35 +188,32 @@ public class MainActivity extends AppCompatActivity {
                 pr.setInfo(info.packageName);
                 list.add(pr);
 
-                //保存第三方应用列表
-                if(type == 1)
-                {
-                    if (killAppList == null)
-                        killAppList = new ArrayList<ApplicationInfo>();
-                    killAppList.add(info);
-                }
-
                 Log.d(TAG, "ApplicationInfo == -----" + info.toString());
             }
             else
             {
+                nullRuningAppCount++;
                 Log.d(TAG, "ApplicationInfo == ----- null");
             }
         }
         Log.d(TAG, "getRunningProcess --- End -----");
+        Log.d(TAG, "run.size() = " + run.size());
+        Log.d(TAG, "AppDataModel.singleton.SelfAppList.size() = " + AppDataModel.singleton.SelfAppList.size());
+        Log.d(TAG, "AppDataModel.singleton.TrirdAppList.size() = " + AppDataModel.singleton.TrirdAppList.size());
+        Log.d(TAG, "nullRuningAppCount = " + nullRuningAppCount);
         return list;
     }
 
     private void killTridApp()
     {
 //        AlertDialog("正在努力开发中！");
-        if(killAppList != null)
+        if(AppDataModel.singleton.TrirdAppList != null)
         {
-            for(ApplicationInfo ai : killAppList)
+            for(ApplicationInfo ai : AppDataModel.singleton.TrirdAppList)
             {
                 //魅族定制，防止清理联系人应用
-//                if(!ai.packageName.contains("meizu") && ai.packageName.contains(""))
-//                {
+                if(!AppDataModel.singleton.appIgnorList.containsKey(ai.packageName) || !AppDataModel.singleton.appIgnorList.get(ai.packageName))
+                {
                     Log.d(TAG, "killTridApp --- " + ai.packageName);
                     try
                     {
@@ -215,12 +224,46 @@ public class MainActivity extends AppCompatActivity {
                     catch (Exception e)
                     {
                         e.printStackTrace();
+                        AlertDialog("您权限不够，不能结束应用，确保设备以获取Root权限！");
+                        break;
                     }
 
-
-//                }
+                }
             }
+            Log.d(TAG, "killTridApp == ----- End");
+
+            new Thread() {
+                @Override
+                public void run() {
+                    while (true)
+                    {
+                        try {
+                            sleep(500);
+
+                            Log.d("Thread Run", "getThridAppCount = " + getThridAppCount() + "AppDataModel.singleton.appIgnorList.size() = " + AppDataModel.singleton.appIgnorList.size());
+                            if(getThridAppCount() <= AppDataModel.singleton.appIgnorList.size())
+                            {
+                                new AnotherTask().execute("JSON1");
+                                break;
+                            }
+                        }
+                        catch (InterruptedException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        }
+
+                    }
+                }
+            }.start();
         }
+    }
+
+    private int getThridAppCount()
+    {
+        List<ActivityManager.RunningAppProcessInfo> run = am.getRunningAppProcesses();
+        int count = run.size() - nullRuningAppCount - AppDataModel.singleton.SelfAppList.size();
+        Log.d("Thread Run", "run.size() = " + run.size() + "AppDataModel.singleton.SelfAppList.size() = " + AppDataModel.singleton.SelfAppList.size());
+        return count;
     }
 
     /**
@@ -262,12 +305,21 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
-    public void AlertDialog(String m)
+    public static void AlertDialog(String m)
     {
-        new  AlertDialog.Builder(this)
+        new  AlertDialog.Builder(MainActivity.singleton)
                 .setTitle("提示" )
                 .setMessage(m)
                 .setPositiveButton("确定" ,  null )
+                .show();
+    }
+    public static void AlertDialog_OKAndCancel(String m, DialogInterface.OnClickListener listener)
+    {
+        new  AlertDialog.Builder(MainActivity.singleton)
+                .setTitle("提示" )
+                .setMessage(m)
+                .setPositiveButton("确定" ,  listener )
+                .setNegativeButton("取消", null)
                 .show();
     }
 }

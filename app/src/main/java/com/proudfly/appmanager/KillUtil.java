@@ -1,7 +1,10 @@
 package com.proudfly.appmanager;
 
+import android.util.Log;
+
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
 
 /**
  * Created by LW on 2016/2/4.
@@ -16,6 +19,7 @@ public class KillUtil {
         initProcess();
         killProcess(packageName);
         close();
+        Log.d("KillUtil", "KillUtil == ----- End");
     }
 
     /**

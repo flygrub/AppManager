@@ -1,9 +1,12 @@
 package com.proudfly.appmanager;
 
 import android.content.Context;
+import android.graphics.Color;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -53,6 +56,7 @@ public class ListAdapter extends BaseAdapter {
             holder.imgage=(ImageView) convertView.findViewById(R.id.image);
             holder.title = (TextView) convertView.findViewById(R.id.title);
             holder.info = (TextView) convertView.findViewById(R.id.info);
+//            holder.ignore = (TextView) convertView.findViewById(R.id.ignore);
 
             convertView.setTag(holder);
         }else{
@@ -64,6 +68,14 @@ public class ListAdapter extends BaseAdapter {
         //设置程序名
         holder.title.setText(pr.getName());
         holder.info.setText(pr.getInfo());
+        if(AppDataModel.singleton.appIgnorList.containsKey(pr.getInfo()) && AppDataModel.singleton.appIgnorList.get(pr.getInfo()))
+        {
+            convertView.setBackgroundColor(Color.parseColor("#185e14"));
+        }
+        else
+        {
+            convertView.setBackgroundColor(Color.parseColor("#000000"));
+        }
 
         return convertView;
     }
@@ -72,4 +84,5 @@ class ViewHolder{
     TextView title;
     TextView info;
     ImageView imgage;
+//    TextView ignore;
 }
