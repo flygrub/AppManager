@@ -16,11 +16,19 @@ public class KillUtil {
      * 结束进程,执行操作调用即可
      */
     public static void kill(String packageName) {
-        initProcess();
-        killProcess(packageName);
-        close();
+        //initProcess();
+        //killProcess(packageName);
+        //close();
+//        String[] cmd = new String[]{"am force-stop " + packageName + " \n"};
+//        ShellCommand.execCommand(cmd, true, killFinish);
+
         Log.d("KillUtil", "KillUtil == ----- End");
     }
+//
+//    private void killFinish()
+//    {
+//
+//    }
 
     /**
      * 初始化进程

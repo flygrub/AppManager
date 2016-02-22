@@ -110,7 +110,7 @@ public class MainActivity extends AppCompatActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
-            AlertDialog("点击应用列表可以添加应用到白名单。\n注意：本应用只针对第三方应用进行管理！更多功能请联系作者。\n邮箱：flygrub@126.com.");
+            AlertDialog("点击应用列表可以添加应用到白名单。\n注意：本应用只针对第三方应用进行管理！更多功能请联系作者。\n\n邮箱：flygrub@126.com.");
             return true;
         }
         else if (id == R.id.action_getTirdRuningList)
@@ -219,7 +219,15 @@ public class MainActivity extends AppCompatActivity {
                     {
 //                        am.killBackgroundProcesses(ai.packageName);
 //                        forceStopPackage(ai.packageName);
-                        KillUtil.kill(ai.packageName);
+//                        KillUtil.kill(ai.packageName);
+                        String[] cmd = new String[]{"am force-stop " + ai.packageName + " \n"};
+                        ShellCommand.execCommand(cmd, true, new ShellCommand.ShellCommandListener() {
+                            @Override
+                            public void onCommandFinished(ShellCommand.CommandResult result) {
+                                Log.d(TAG, result.toString());
+                                onCommandFinish(result);
+                            }
+                        });
                     }
                     catch (Exception e)
                     {
@@ -232,32 +240,42 @@ public class MainActivity extends AppCompatActivity {
             }
             Log.d(TAG, "killTridApp == ----- End");
 
-            new Thread() {
-                @Override
-                public void run() {
-                    while (true)
-                    {
-                        try {
-                            sleep(500);
-
-                            Log.d("Thread Run", "getThridAppCount = " + getThridAppCount() + "AppDataModel.singleton.appIgnorList.size() = " + AppDataModel.singleton.appIgnorList.size());
-                            if(getThridAppCount() <= AppDataModel.singleton.appIgnorList.size())
-                            {
-                                new AnotherTask().execute("JSON1");
-                                break;
-                            }
-                        }
-                        catch (InterruptedException e) {
-                            // TODO Auto-generated catch block
-                            e.printStackTrace();
-                        }
-
-                    }
-                }
-            }.start();
+//            new Thread() {
+//                @Override
+//                public void run() {
+//                    while (true)
+//                    {
+//                        try {
+//                            sleep(500);
+//
+//                            Log.d("Thread Run", "getThridAppCount = " + getThridAppCount() + "AppDataModel.singleton.appIgnorList.size() = " + AppDataModel.singleton.appIgnorList.size());
+//                            if(getThridAppCount() <= AppDataModel.singleton.appIgnorList.size())
+//                            {
+//                                new AnotherTask().execute("JSON1");
+//                                break;
+//                            }
+//                        }
+//                        catch (InterruptedException e) {
+//                            // TODO Auto-generated catch block
+//                            e.printStackTrace();
+//                        }
+//
+//                    }
+//                }
+//            }.start();
         }
     }
 
+    private int currentKillIndex = 0;
+    private void onCommandFinish(ShellCommand.CommandResult result)
+    {
+        currentKillIndex++;
+        if(currentKillIndex >= AppDataModel.singleton.TrirdAppList.size() - AppDataModel.singleton.appIgnorList.size())
+        {
+            currentKillIndex = 0;
+            new AnotherTask().execute("JSON1");
+        }
+    }
     private int getThridAppCount()
     {
         List<ActivityManager.RunningAppProcessInfo> run = am.getRunningAppProcesses();
