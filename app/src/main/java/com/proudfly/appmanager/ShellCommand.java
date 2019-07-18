@@ -10,6 +10,9 @@ import java.util.concurrent.TimeoutException;
  * Created by LW on 2016/2/22.
  */
 public class ShellCommand {
+
+    private static Process process = null;
+
     public static void execCommand(String[] commands, boolean isRoot,
                                    ShellCommandListener listener) throws IOException,
             InterruptedException, TimeoutException {
@@ -21,14 +24,14 @@ public class ShellCommand {
             listener.onCommandFinished(result);
         }
 
-        Process process = null;
         BufferedReader successReader = null;
         BufferedReader errorReader = null;
         StringBuilder successMsg = null;
         StringBuilder errorMsg = null;
 
         DataOutputStream os = null;
-        process = Runtime.getRuntime().exec(isRoot ? "su" : "sh");
+        if(process == null)
+            process = Runtime.getRuntime().exec(isRoot ? "su" : "sh");
         os = new DataOutputStream(process.getOutputStream());
         for (String command : commands) {
             if (command == null) {
@@ -78,9 +81,7 @@ public class ShellCommand {
             e.printStackTrace();
         }
 
-        if (process != null) {
-            process.destroy();
-        }
+
         result = new CommandResult(exitCode, successMsg == null ? null
                 : successMsg.toString(), errorMsg == null ? null
                 : errorMsg.toString());
@@ -121,5 +122,13 @@ public class ShellCommand {
 
     public interface ShellCommandListener {
         public void onCommandFinished(CommandResult result);
+    }
+
+    public static void Close()
+    {
+        if (process != null) {
+            process.destroy();
+        }
+        process = null;
     }
 }

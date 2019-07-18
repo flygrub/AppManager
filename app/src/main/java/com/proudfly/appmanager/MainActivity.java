@@ -50,6 +50,8 @@ public class MainActivity extends AppCompatActivity {
 
     private  int nullRuningAppCount = 0;
 
+    private YoumiControl youmi;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -72,6 +74,8 @@ public class MainActivity extends AppCompatActivity {
         AppDataModel.singleton.getIgnoreList();
 
         init();
+
+        youmi = new YoumiControl();
     }
 
     @Override
@@ -209,60 +213,73 @@ public class MainActivity extends AppCompatActivity {
 //        AlertDialog("正在努力开发中！");
         if(AppDataModel.singleton.TrirdAppList != null)
         {
+//            String[] cmd = new String[AppDataModel.singleton.TrirdAppList.size()];
+            int i =0;
             for(ApplicationInfo ai : AppDataModel.singleton.TrirdAppList)
             {
                 //魅族定制，防止清理联系人应用
                 if(!AppDataModel.singleton.appIgnorList.containsKey(ai.packageName) || !AppDataModel.singleton.appIgnorList.get(ai.packageName))
                 {
                     Log.d(TAG, "killTridApp --- " + ai.packageName);
+//                    cmd[i] = "am force-stop " + ai.packageName + " \n";
                     try
                     {
 //                        am.killBackgroundProcesses(ai.packageName);
 //                        forceStopPackage(ai.packageName);
-//                        KillUtil.kill(ai.packageName);
-                        String[] cmd = new String[]{"am force-stop " + ai.packageName + " \n"};
-                        ShellCommand.execCommand(cmd, true, new ShellCommand.ShellCommandListener() {
-                            @Override
-                            public void onCommandFinished(ShellCommand.CommandResult result) {
-                                Log.d(TAG, result.toString());
-                                onCommandFinish(result);
-                            }
-                        });
+                        KillUtil.kill(ai.packageName);
                     }
                     catch (Exception e)
                     {
                         e.printStackTrace();
-                        AlertDialog("您权限不够，不能结束应用，确保设备以获取Root权限！");
+
                         break;
                     }
 
                 }
+                i++;
             }
+
+//            try {
+//
+//                ShellCommand.execCommand(cmd, true, new ShellCommand.ShellCommandListener() {
+//                    @Override
+//                    public void onCommandFinished(ShellCommand.CommandResult result) {
+//                        Log.d(TAG, result.toString());
+//                        onCommandFinish(result);
+//                    }
+//                });
+//            }
+//            catch (Exception e)
+//            {
+//                e.printStackTrace();
+//                AlertDialog("您权限不够，不能结束应用，确保设备以获取Root权限！");
+//            }
+
             Log.d(TAG, "killTridApp == ----- End");
 
-//            new Thread() {
-//                @Override
-//                public void run() {
-//                    while (true)
-//                    {
-//                        try {
-//                            sleep(500);
-//
-//                            Log.d("Thread Run", "getThridAppCount = " + getThridAppCount() + "AppDataModel.singleton.appIgnorList.size() = " + AppDataModel.singleton.appIgnorList.size());
-//                            if(getThridAppCount() <= AppDataModel.singleton.appIgnorList.size())
-//                            {
-//                                new AnotherTask().execute("JSON1");
-//                                break;
-//                            }
-//                        }
-//                        catch (InterruptedException e) {
-//                            // TODO Auto-generated catch block
-//                            e.printStackTrace();
-//                        }
-//
-//                    }
-//                }
-//            }.start();
+            new Thread() {
+                @Override
+                public void run() {
+                    while (true)
+                    {
+                        try {
+                            sleep(500);
+
+                            Log.d("Thread Run", "getThridAppCount = " + getThridAppCount() + "AppDataModel.singleton.appIgnorList.size() = " + AppDataModel.singleton.appIgnorList.size());
+                            if(getThridAppCount() <= AppDataModel.singleton.appIgnorList.size())
+                            {
+                                new AnotherTask().execute("JSON1");
+                                break;
+                            }
+                        }
+                        catch (InterruptedException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        }
+
+                    }
+                }
+            }.start();
         }
     }
 
@@ -279,7 +296,40 @@ public class MainActivity extends AppCompatActivity {
     private int getThridAppCount()
     {
         List<ActivityManager.RunningAppProcessInfo> run = am.getRunningAppProcesses();
-        int count = run.size() - nullRuningAppCount - AppDataModel.singleton.SelfAppList.size();
+        int count = 0;//run.size() - nullRuningAppCount - AppDataModel.singleton.SelfAppList.size();
+
+
+
+
+        PackagesInfo pi = new PackagesInfo(MainActivity.singleton);
+        for(ActivityManager.RunningAppProcessInfo ra : run)
+        {
+            ApplicationInfo info =  pi.getInfo(ra.processName);
+            if(info != null)
+            {
+                //屏蔽掉自己
+                if(info.packageName.equals(getPackageName()))
+                {
+                    continue;
+                }
+
+                //判断是否为系统预装的应用
+                if ((info.flags & info.FLAG_SYSTEM) <= 0)
+                {
+                    count++;
+                    continue;
+                }
+                if((info.flags & info.FLAG_SYSTEM) > 0)
+                {
+
+                    continue;
+                }
+            }
+        }
+
+
+
+
         Log.d("Thread Run", "run.size() = " + run.size() + "AppDataModel.singleton.SelfAppList.size() = " + AppDataModel.singleton.SelfAppList.size());
         return count;
     }

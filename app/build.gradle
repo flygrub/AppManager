@@ -31,7 +31,7 @@ android {
             def outputFile = output.outputFile
             if (outputFile != null && outputFile.name.endsWith('.apk')) {
                 //这里修改apk文件名
-                def fileName = "AppMG_${defaultConfig.versionName}_${defaultConfig.versionCode}_${variant.productFlavors[0].name}_${releaseTime() }.apk"
+                def fileName = "简易应用管理_${defaultConfig.versionName}_${defaultConfig.versionCode}_${variant.productFlavors[0].name}_${releaseTime() }.apk"
                 output.outputFile = new File(outputFile.parent, fileName)
             }
         }
@@ -39,8 +39,9 @@ android {
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile fileTree(include: ['*.jar'], dir: 'libs')
     testCompile 'junit:junit:4.12'
     compile 'com.android.support:appcompat-v7:23.1.0'
     compile 'com.android.support:design:23.1.0'
+    compile files('libs/YoumiSdk_v5.3.1_2016-01-05.jar')
 }

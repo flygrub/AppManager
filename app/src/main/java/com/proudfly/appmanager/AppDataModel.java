@@ -34,6 +34,9 @@ public class AppDataModel {
 
     private static final String saveListID = "ignoreList";
 
+    public static final String youmiID = "50ef42f24b9c8396";
+    public static final String youmiKey = "f263d55e516b3fba";
+
     public AppDataModel()
     {
         Init();
